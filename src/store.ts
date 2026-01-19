@@ -2,6 +2,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { combineReducers } from "redux";
 import authReducer from "./features/auth/authSlice";
+import moodReducer from "./features/home/moodSlices";
 import {
   persistStore,
   persistReducer,
@@ -17,10 +18,11 @@ import storage from "redux-persist/lib/storage"; // localStorage
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["auth", "cart"], // which slices to persist
+  whitelist: ["auth", "mood"], // which slices to persist
 };
 const rootReducer = combineReducers({
   auth: authReducer,
+  mood: moodReducer,
 });
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 

@@ -4,6 +4,9 @@ import {
   createAsyncThunk,
 } from "@reduxjs/toolkit";
 import { ACCOUNTS } from "../../constants/accounts";
+
+export type AuthMode = "login" | "signup";
+
 type User = {
   id: number;
   username: string;
@@ -16,15 +19,19 @@ type AuthState = {
   user: User | null;
   loading: boolean;
   error: string | null;
+  authMode: AuthMode;
+  isAuthencated: boolean;
 };
 
 const initialState: AuthState = {
+  authMode: "login",
+  isAuthencated: false,
   user: null,
   loading: false,
   error: null,
 };
 
-export const login = createAsyncThunk(
+export const loginService = createAsyncThunk(
   "auth/login",
   async (payload: { email: string; password: string }, { rejectWithValue }) => {
     try {
@@ -36,8 +43,35 @@ export const login = createAsyncThunk(
         throw new Error("Sai thông tin mật khẩu vui lòng thử lại!");
       }
       return account;
-    } catch (err: any) {
-      return rejectWithValue(err?.response?.data?.message || err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        return rejectWithValue(err.message);
+      }
+
+      // Optional: handle other error shapes (e.g., Axios errors)
+      return rejectWithValue("Unexpected error");
+    }
+  }
+);
+export const signupService = createAsyncThunk(
+  "auth/signup",
+  async (payload: { email: string; password: string }, { rejectWithValue }) => {
+    try {
+      const account = ACCOUNTS.find((item) => item.username === payload.email);
+      if (!account) {
+        throw new Error("Không có tài khoản với email này.");
+      }
+      if (account.password !== payload.password) {
+        throw new Error("Sai thông tin mật khẩu vui lòng thử lại!");
+      }
+      return account;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        return rejectWithValue(err.message);
+      }
+
+      // Optional: handle other error shapes (e.g., Axios errors)
+      return rejectWithValue("Unexpected error");
     }
   }
 );
@@ -46,6 +80,9 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
+    switchMode(state, action: PayloadAction<AuthMode>) {
+      state.authMode = action.payload;
+    },
     logout(state) {
       state.user = null;
       state.error = null;
@@ -54,23 +91,41 @@ const authSlice = createSlice({
     setUser(state, action: PayloadAction<User>) {
       state.user = action.payload;
     },
+    setError(state, action: PayloadAction<string>) {
+      state.error = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(login.pending, (s) => {
+      .addCase(loginService.pending, (s) => {
         s.loading = true;
         s.error = null;
       })
-      .addCase(login.fulfilled, (s, action) => {
+      .addCase(loginService.fulfilled, (s, action) => {
         s.loading = false;
         s.user = { username: action.payload.username, ...action.payload.user };
+        s.isAuthencated = true;
       })
-      .addCase(login.rejected, (s, action) => {
+      .addCase(loginService.rejected, (s, action) => {
+        s.loading = false;
+        s.error = action.payload as string;
+      })
+      // Signup
+      .addCase(signupService.pending, (s) => {
+        s.loading = true;
+        s.error = null;
+      })
+      .addCase(signupService.fulfilled, (s, action) => {
+        s.loading = false;
+        s.user = { username: action.payload.username, ...action.payload.user };
+        s.isAuthencated = true;
+      })
+      .addCase(signupService.rejected, (s, action) => {
         s.loading = false;
         s.error = action.payload as string;
       });
   },
 });
 
-export const { logout, setUser } = authSlice.actions;
+export const { logout, setUser, switchMode, setError } = authSlice.actions;
 export default authSlice.reducer;

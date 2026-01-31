@@ -44,7 +44,15 @@ const PersonalInfo = () => {
       setNameError("Tên phải có ít nhất 2 ký tự");
       return;
     }
-    handleSetUser({ ...user, name, image: imageBase64 });
+    handleSetUser({
+      ...user,
+      name,
+      image: imageBase64,
+      id: user?.id || 0,
+      username: user?.username || "",
+      age: user?.age || 0,
+      gender: user?.gender || 0,
+    });
   }
   return (
     <div className="w-full ">

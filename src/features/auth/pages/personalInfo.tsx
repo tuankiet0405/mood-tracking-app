@@ -2,31 +2,49 @@ import { useRef, useState } from "react";
 import { Input } from "../../../components/input";
 import { Stack } from "../../../components/stack";
 import { useAuth } from "../hooks";
+import { isValidFileSize, isValidName } from "../validation";
 
 const PersonalInfo = () => {
   const { user, handleSetUser } = useAuth();
-  
+
   const inputFileRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [fileName, setFileName] = useState<string | null>(null);
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!isValidFileSize(file, 250)) {
+      setError("File quá lớn, tối đa 250KB");
+      return;
+    }
+
+    setError(null);
     setFileName(file.name);
 
-    if (blobUrl) URL.revokeObjectURL(blobUrl);
-
-    const url = URL.createObjectURL(file);
-    setBlobUrl(url);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      setImageBase64(base64);
+    };
+    reader.readAsDataURL(file);
   };
+
   function handleChangeName(event: React.ChangeEvent<HTMLInputElement>) {
     setName(event.target.value);
+    if (nameError) setNameError(null);
   }
+
   function handleStartTracking() {
-    if (name.trim() === "") return;
-    handleSetUser({ ...user, name, image: fileName });
+    if (!isValidName(name)) {
+      setNameError("Tên phải có ít nhất 2 ký tự");
+      return;
+    }
+    handleSetUser({ ...user, name, image: imageBase64 });
   }
   return (
     <div className="w-full ">
@@ -53,12 +71,16 @@ const PersonalInfo = () => {
               placeholder="Enter your full name"
               value={name}
               onChange={handleChangeName}
+              error={nameError}
             />
+            {nameError && (
+              <p className="text-preset-7 text-red-600">* {nameError}</p>
+            )}
           </Stack>
           <Stack direction="row" gap="250" className="items-center">
             <img
-              src={blobUrl || "/images/avatar-placeholder.svg"}
-              className="w-800 h-800 shrink-0 rounded-full object-cover"
+              src={imageBase64 || "/images/avatar-placeholder.svg"}
+              className="w-[64px] h-[64px] shrink-0 rounded-full object-cover"
               alt="avatar"
             />
             <Stack gap="200" className="flex-1 min-w-0">
@@ -69,17 +91,20 @@ const PersonalInfo = () => {
                 <p className="text-neutral-600 text-preset-7">
                   Max 250KB, PNG or JPEG
                 </p>
+                {error && (
+                  <p className="text-preset-7 text-red-600">* {error}</p>
+                )}
               </Stack>
               <input
                 type="file"
-                accept=".png, .jpg"
-                alt="choose file"
+                accept=".png,.jpg,.jpeg"
                 className="hidden"
                 ref={inputFileRef}
                 onChange={handleFileChange}
               />
               <button
-                className="w-fit text-neutral-600 text-preset-6 px-200 py-100 rounded-8 border border-neutral-300"
+                type="button"
+                className="w-fit text-neutral-600 text-preset-6 px-200 py-100 rounded-8 border border-neutral-300 hover:bg-neutral-100 transition-colors"
                 onClick={() => inputFileRef.current?.click()}
               >
                 Upload

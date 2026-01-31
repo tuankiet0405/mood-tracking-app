@@ -1,4 +1,3 @@
-// src/components/AuthLayout.tsx
 import React from "react";
 
 interface AuthLayoutProps {

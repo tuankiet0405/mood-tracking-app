@@ -2,6 +2,7 @@ import clsx from "clsx";
 
 interface StackProps extends React.HTMLAttributes<HTMLDivElement> {
   direction?: "row" | "col";
+  canWrap?: boolean;
   gap?:
     | "0" // 0px
     | "025" // 2px
@@ -22,6 +23,7 @@ interface StackProps extends React.HTMLAttributes<HTMLDivElement> {
 export const Stack: React.FC<StackProps> = ({
   direction = "col",
   gap = "025",
+  canWrap = false,
   children,
   className,
   ...props
@@ -47,8 +49,9 @@ export const Stack: React.FC<StackProps> = ({
       className={clsx(
         "flex",
         direction === "col" ? "flex-col" : "flex-row",
+        canWrap ? "flex-wrap" : "",
         `${gaps[gap]}`,
-        className
+        className,
       )}
       {...props}
     >

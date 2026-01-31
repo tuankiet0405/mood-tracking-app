@@ -11,7 +11,7 @@ const MoodTrackProgress = () => {
           <div
             key={index}
             className={`${
-              modalState?.currentStep && modalState.currentStep <= index
+              modalState?.currentStep && modalState.currentStep >= index + 1
                 ? "bg-blue-600"
                 : "bg-blue-200"
             } w-full h-075  rounded-full `}
